@@ -1,7 +1,8 @@
 node {
   stage('SCM') {
-    git 'https://github.com/pushpkantpatil/sampleproject.git',
-    git branch: 'main'
+    git branch: 'main',
+    git 'https://github.com/pushpkantpatil/sampleproject.git'
+    
   }
   stage('SonarQube analysis') {
     def scannerHome = tool 'mysonarqube';
