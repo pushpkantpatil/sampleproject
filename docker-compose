@@ -1,0 +1,76 @@
+version: "2"
+services:
+  api:
+    build:
+      context: .
+      args:
+        - "ENV=development"
+    ports:
+      - "5000:5000"
+    links:
+      - auth
+      - cm
+      - db
+      - query
+      - incrementer
+      - redis
+    depends_on:
+      - auth
+      - cm
+      - db
+      - query
+      - incrementer
+      - redis
+    volumes:
+      - "./src/app:/srv/product_manager"
+      - "./src/tests:/srv/tests"
+    environment:
+      - "APPLICATION_TOKEN=product-manager"
+      - "CORS=*"
+      - "AUTH_URL=http://auth:8080"
+      - "PYTHONDONTWRITEBYTECODE=1"
+      - "WSGI_HMR=1"
+      - "BACKEND_URL=http://{owner}-backend.baikingu.com/v1"
+      - "USERNAME=system@sacoding.com"
+      - "PASSWORD=byg5evy4cggh65g"
+      - "DEBUG_LEVEL=DEBUG"
+      - "MONGO_HOSTNAME=db"
+      - "RABBITMQ_USER=guest"
+      - "RABBITMQ_PASSWORD=guest"
+      - "RABBITMQ_HOST=query"
+      - "INCREMENTER_URL=http://incrementer:5000/v1"
+      - "SELF_URL=http://api:5000/v1"
+      - "COMPANY_MANAGER=http://cm:8080/v1"
+      - "REDIS_HOSTNAME=redis"
+      - "RABBITMQ_EXCHANGE_MESSAGE=baikingu.command"
+  auth:
+    image: sacoding/http-logger:2
+    environment:
+      - "CODE=204"
+  cm:
+    image: sacoding/http-logger:2
+    environment:
+      - "CODE=200"
+      - "DATA={\"name\": \"DEV\", \"owners\": {\"dev\": {\"owner\": \"dev\", \"name\": \"Dev\"}}}"
+  query:
+    image: "rabbitmq:3-management-alpine"
+    ports:
+      - "15674:15672"
+  db:
+    image: mongo:4
+  incrementer:
+    image: 511159779397.dkr.ecr.eu-central-1.amazonaws.com/incrementer:1
+    links:
+      - "seq_storage:db"
+    depends_on:
+      - seq_storage
+    environment:
+      - "WORKERS=1"
+      - "POSTGRES_HOST=db"
+      - "POSTGRES_USER=postgres"
+      - "POSTGRES_PASSWORD=postgres"
+      - "POSTGRES_DB=postgres"
+  seq_storage:
+    image: postgres:10
+  redis:
+    image: "redis"
